@@ -1,0 +1,39 @@
+{
+    "name": "digitv/yii2sockets",
+    "version": "1.0.0",
+    "description": "Node.js web-sockets support",
+    "keywords": ["yii2", "node", "nodejs", "web-sockets"],
+    "type": "yii2-extension",
+    "license": "MIT",
+    "support": {
+        "issues": "https://github.com/digitv/kint/issues",
+        "source": "https://github.com/digitv/kint"
+    },
+    "authors": [
+        {
+            "name": "Digit",
+            "email": "digit.vova@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "yiisoft/yii2": "*"
+    },
+    "require-dev": {
+        "yiisoft/yii2-codeception": "~2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "digitv\\yii2sockets\\": ""
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.x-dev"
+        },
+        "asset-installer-paths": {
+            "npm-asset-library": "vendor/npm",
+            "bower-asset-library": "vendor/bower"
+        }
+    }
+}
