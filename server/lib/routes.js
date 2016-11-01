@@ -22,19 +22,27 @@ Routes.prototype.publishMessage = function (request, response) {
         channel = typeof request.body.channel !== "undefined" ? request.body.channel : false,
         userId = typeof request.body.userId !== "undefined" ? request.body.userId : false,
         sessionId = typeof request.body.sessionId !== "undefined" ? request.body.sessionId : false,
+        socketId = typeof request.body.socketId !== "undefined" ? request.body.socketId : false,
         broadcast = typeof request.body.broadcast !== "undefined" ? request.body.broadcast : false;
     if(typeof request.body.callback !== "undefined") body.callback = request.body.callback;
     var sentCount = 0, resp = {success: false, sent: 0};
-    if(userId === false && sessionId === false && channel === false && broadcast === false) {
-        resp.error = 'Undefined recipient (sessionId|userId|channel|broadcast)';
+    if(userId === false && sessionId === false && socketId === false && channel === false && broadcast === false) {
+        resp.error = 'Undefined recipient (sessionId|socketId|userId|channel|broadcast)';
+    //Send to User ID
     } else if(userId !== false) {
-        request.clientManager.publishMessageToUser(request.body.userId, body);
+        sentCount = request.clientManager.publishMessageToUser(userId, body);
+    //Send to Session ID
     } else if(sessionId !== false) {
-        request.clientManager.publishMessageToSid(request.body.sessionId, body);
+        sentCount = request.clientManager.publishMessageToSid(sessionId, body);
+    //Send to Socket ID
+    } else if(socketId !== false) {
+        sentCount = request.clientManager.publishMessageToClient(socketId, body) ? 1 : 0;
+    //Send to channel
     } else if(channel !== false) {
-        request.clientManager.publishMessageToChannel(channel, body);
+        sentCount = request.clientManager.publishMessageToChannel(channel, body);
+    //Send to all users
     } else if(broadcast !== false && broadcast) {
-        request.clientManager.publishMessageBroadcast(body);
+        sentCount = request.clientManager.publishMessageBroadcast(body);
     }
     resp.success = typeof resp.error === "undefined";
     resp.sent = sentCount;

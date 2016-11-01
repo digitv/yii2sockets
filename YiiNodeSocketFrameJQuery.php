@@ -164,6 +164,39 @@ class YiiNodeSocketFrameJQuery extends YiiNodeSocketFrameBasic  {
     }
 
     /**
+     * @param $functionName string
+     * @return $this
+     */
+    public function func($functionName) {
+        $data = $this->composeMethodData('_func', func_get_args());
+        $this->_body['methods'][] = $data;
+        $this->selector('body');
+        return $this;
+    }
+
+
+    /* MY CUSTOM METHODS */
+
+    /**
+     * Invoke Counters method
+     * @return $this
+     */
+    public function counters() {
+        $data = $this->composeMethodData('_counters', func_get_args());
+        $this->_body['methods'][] = $data;
+        return $this;
+    }
+
+    /**
+     * Update counters
+     * @return $this
+     */
+    public function countersUpdate() {
+        $args = array_merge(['update'], func_get_args());
+        return $this->counters($args);
+    }
+
+    /**
      * @inheritdoc
      */
     protected function validate() {

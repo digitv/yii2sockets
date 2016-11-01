@@ -305,10 +305,10 @@ ClientManager.prototype.publishMessageToChannel = function (channel, message) {
  * Publish broadcast message
  */
 ClientManager.prototype.publishMessageBroadcast = function (message) {
-    var res, sentCount = 0;
+    var res;
+    var sentCount = Object.keys(this.sockets).length;
     for (var socketId in this.sockets) {
         res = this.publishMessageToClient(socketId, message);
-        sentCount = res ? sentCount +1 : sentCount;
     }
     this.logger.debug(this.logPrefix + 'publishMessageBroadcast: sent to '+sentCount+' recipients');
     return sentCount;

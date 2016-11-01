@@ -24,6 +24,19 @@ class YiiNodeSocket extends Component {
 
     public $channelsByPermissions = [];
 
+    public $userSocketId;
+
+    public function init()
+    {
+        parent::init();
+        //Get current user socket id
+        $headers = Yii::$app->request->getHeaders();
+        if(!empty($headers) && !empty($headers['yii-node-socket-id'])) {
+            $userSocketId = is_array($headers['yii-node-socket-id']) ? reset($headers['yii-node-socket-id']) : $headers['yii-node-socket-id'];
+            $this->userSocketId = !empty($userSocketId) ? $userSocketId : null;
+        }
+    }
+
     /**
      * Get base url of Node.js server
      * @return string
@@ -143,6 +156,23 @@ class YiiNodeSocket extends Component {
         $data = [
             'body' => $message,
             'sessionId' => $sid,
+            'callback' => $callback,
+        ];
+        return $this->sendMessage($data);
+    }
+
+    /**
+     * Send message to session ID
+     * @param mixed $message
+     * @param string $socketId
+     * @param string $callback
+     * @return bool|mixed
+     */
+    public function sendMessageToSocket($message, $socketId = '', $callback = '') {
+        if(!$socketId) return false;
+        $data = [
+            'body' => $message,
+            'socketId' => $socketId,
             'callback' => $callback,
         ];
         return $this->sendMessage($data);

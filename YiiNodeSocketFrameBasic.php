@@ -18,6 +18,7 @@ class YiiNodeSocketFrameBasic extends Component {
     protected $_channel;
     protected $_sessionId;
     protected $_userId;
+    protected $_socketId;
     protected $_broadcast = false;
     protected $_body;
     protected $_callback;
@@ -74,6 +75,11 @@ class YiiNodeSocketFrameBasic extends Component {
     public function setUser($userId) {
         if($userId instanceof IdentityInterface) { $userId = $userId->getId(); }
         $this->_userId = $userId;
+        return $this;
+    }
+
+    public function setSocketId($socketId) {
+        $this->_socketId = $socketId;
         return $this;
     }
 
@@ -159,13 +165,25 @@ class YiiNodeSocketFrameBasic extends Component {
     }
 
     /**
+     * Send frame to current user socketId
+     * useful on ajax requests
+     * @return bool|mixed
+     */
+    public function sendToThis() {
+        $socketId = Yii::$app->nodeSockets->userSocketId;
+        if(!$socketId) return false;
+        $this->setSocketId($socketId);
+        return $this->send();
+    }
+
+    /**
      * Validate input
      * @return bool
      */
     protected function validate() {
         $valid = true;
         $this->errors = [];
-        if(!isset($this->_userId) && !isset($this->_sessionId) && !isset($this->_channel) && !$this->isBroadcast()) {
+        if(!isset($this->_userId) && !isset($this->_sessionId) && !isset($this->_socketId) && !isset($this->_channel) && !$this->isBroadcast()) {
             $valid = false;
             $this->errors[] = 'There are no recipient for this message';
         }
@@ -187,6 +205,7 @@ class YiiNodeSocketFrameBasic extends Component {
         elseif(isset($this->_channel)) { $data['channel'] = $this->_channel; }
         elseif(isset($this->_userId)) { $data['userId'] = $this->_userId; }
         elseif(isset($this->_sessionId)) { $data['sessionId'] = $this->_sessionId; }
+        elseif(isset($this->_socketId)) { $data['socketId'] = $this->_socketId; }
         //check callback
         if(isset($this->_callback)) { $data['callback'] = $this->_callback; }
         //add body
