@@ -196,6 +196,12 @@ class YiiNodeSocketFrameJQuery extends YiiNodeSocketFrameBasic  {
         return $this->counters($args);
     }
 
+    public function replaceWithContext() {
+        $data = $this->composeMethodData('replaceWithContext', func_get_args());
+        $this->_body['methods'][] = $data;
+        return $this;
+    }
+
     /**
      * @inheritdoc
      */
