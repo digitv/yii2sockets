@@ -2,19 +2,20 @@
 namespace digitv\yii2sockets\commands;
 
 use Yii;
+use yii\console\Controller;
+
 /**
- * Created by JetBrains PhpStorm.
- * User: once
- * Date: 10/21/13
- * Time: 3:06 PM
- * To change this template use File | Settings | File Templates.
+ * YiiNodeSockets console controller
  */
 
-class YiiNodeSocketsController extends \yii\console\Controller {
+class YiiNodeSocketsController extends Controller {
 
     public $confSource = __DIR__ . '/../conf_templates';
 
-	public function actionInit() {
+    /**
+     * Generate Node.js server configs
+     */
+    public function actionInit() {
         $this->compileClient();
         $this->compileServer();
     }

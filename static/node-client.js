@@ -3,14 +3,13 @@
  */
 if(typeof io !== "undefined") {
     var socket = io(ioConf.scheme+'://'+ioConf.host+':'+ioConf.port);
-    //console.log(socket);
 
     socket.on('connect', function () {
-        console.log('connected');
+        console.log('connected to socket.io');
     });
 
     socket.on('disconnect', function () {
-        console.log('disconnected');
+        console.log('disconnected from socket.io');
     });
 
     socket.on('message', function (message) {
@@ -28,7 +27,7 @@ var YiiNodeSockets = {callbacks: {}};
 
 YiiNodeSockets.callbacks.testCallback = function (message, _socket) {
     console.log(message);
-    console.log('test callback!');
+    console.log('!test callback!');
 };
 
 //jQuery frames callback
