@@ -77,4 +77,4 @@ For example:
 ```
 NODE_ENV=production node app.js
 ```
-At that case it runs in production mode with disabled debug information.
+In that case it runs in production mode with disabled debug information.
