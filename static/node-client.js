@@ -48,7 +48,6 @@ YiiNodeSockets.callbacks.jQueryFrameCallback = function (message, _socket) {
         args = typeof methodRow.arguments !== "undefined" ? methodRow.arguments : [];
         //Function invoke
         if(methodRow.method == "_func") {
-            console.log(methodRow.method);
             var functionName = args.shift();
             if(functionName.indexOf('.') === -1 && typeof window[functionName] === "function") {
                 window[functionName].apply(window, args);
@@ -56,7 +55,6 @@ YiiNodeSockets.callbacks.jQueryFrameCallback = function (message, _socket) {
                 var functionChain = functionName.split('.'), functionObj = window, _functionName;
                 while (functionChain.length > 0 && functionObj !== false) {
                     _functionName = functionChain.shift();
-                    console.log(functionObj);
                     if(typeof functionObj[_functionName] === "object") {
                         functionObj = functionObj[_functionName];
                     } else if(functionChain.length == 0 && typeof functionObj[_functionName] === "function") {
