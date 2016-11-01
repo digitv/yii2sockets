@@ -1,8 +1,12 @@
 <?php
+namespace digitv\yii2sockets\assets;
+
+use Yii;
+use yii\web\AssetBundle;
 /**
  *
  */
-class YiiNodeSocketsAsset extends \yii\web\AssetBundle {
+class YiiNodeSocketsAsset extends AssetBundle {
     public $name = 'YiiNodeSockets asset';
     public $sourcePath = '@vendor/digitv/yii2sockets/static';
     public $baseUrl = '@web';
@@ -16,9 +20,11 @@ class YiiNodeSocketsAsset extends \yii\web\AssetBundle {
     public function init()
     {
         $host = Yii::$app->nodeSockets->nodeJsHostClient;
+        $scheme = Yii::$app->nodeSockets->nodeJsScheme;
         $this->js[] = sprintf(
-            "http://%s:%d%s", $host, Yii::$app->nodeSockets->nodeJsPort, '/socket.io/socket.io.js'
+            "%s://%s:%d%s", $scheme, $host, Yii::$app->nodeSockets->nodeJsPort, '/socket.io/socket.io.js'
         );
-        $this->js[] = 'static/node-client.js';
+        $this->js[] = 'node-client-config.js';
+        $this->js[] = 'node-client.js';
     }
 }
