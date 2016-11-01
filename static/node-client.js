@@ -23,8 +23,10 @@ if(typeof io !== "undefined") {
     });
 }
 
+//Init base object
 var YiiNodeSockets = {callbacks: {}};
 
+//just test callback to show how it must be written
 YiiNodeSockets.callbacks.testCallback = function (message, _socket) {
     console.log(message);
     console.log('!test callback!');
