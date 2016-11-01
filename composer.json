@@ -1,13 +1,13 @@
 {
     "name": "digitv/yii2sockets",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Node.js web-sockets support",
     "keywords": ["yii2", "node", "nodejs", "web-sockets"],
     "type": "yii2-extension",
     "license": "MIT",
     "support": {
-        "issues": "https://github.com/digitv/kint/issues",
-        "source": "https://github.com/digitv/kint"
+        "issues": "https://github.com/digitv/yii2sockets/issues",
+        "source": "https://github.com/digitv/yii2sockets"
     },
     "authors": [
         {
