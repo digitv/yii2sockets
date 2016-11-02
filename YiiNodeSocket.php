@@ -239,10 +239,18 @@ class YiiNodeSocket extends Component {
     public function newMessage() {
         return new YiiNodeSocketFrameBasic();
     }
+
     /**
      * @return YiiNodeSocketFrameJQuery
      */
     public function newJQuery() {
         return new YiiNodeSocketFrameJQuery();
+    }
+
+    /**
+     * @return YiiNodeSocketFrameGrowl
+     */
+    public function newNotify() {
+        return new YiiNodeSocketFrameGrowl();
     }
 }

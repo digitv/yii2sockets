@@ -77,3 +77,10 @@ YiiNodeSockets.callbacks.jQueryFrameCallback = function (message, _socket) {
         }
     }
 };
+
+//Growl notify frames callback
+YiiNodeSockets.callbacks.notifyFrameCallback = function (message, _socket) {
+    if(typeof jQuery.notify !== "function") return;
+    var body = message.body;
+    jQuery.notify(body.options, body.settings);
+};
