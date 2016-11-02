@@ -101,6 +101,12 @@ Yii::$app->nodeSockets->newMessage()
     ->setCallback('jsCallbackName')
     ->send();
 ```
+Send message to this socket (example is used on AJAX request).
+```
+Yii::$app->nodeSockets->newNotify()
+    ->setText('Hello world')
+    ->sendToThis();
+```
 Send jQuery frame to user with ID `1`. It will remove element with selector `#element_selector`.
 ```
 Yii::$app->nodeSockets->newJQuery()
@@ -108,9 +114,9 @@ Yii::$app->nodeSockets->newJQuery()
     ->setUser(1)
     ->send();
 ```
-Send message to this socket (example is used on AJAX request).
+Javascript callback example:
 ```
-Yii::$app->nodeSockets->newNotify()
-    ->setText('Hello world')
-    ->sendToThis();
+YiiNodeSockets.callbacks.jsCallbackName = function (message, _socket) {
+    console.log(message.body);
+};
 ```
