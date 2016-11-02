@@ -85,6 +85,7 @@ In that case it runs in production mode with disabled debug information.
 
 #### Messages
 There are 3 message classes (I call it Frames):
+
 1. Basic (**YiiNodeSocketFrameBasic**) used for basic messages.
 
 2. jQuery (**YiiNodeSocketFrameJQuery**) used for jQuery DOM manipulations.
