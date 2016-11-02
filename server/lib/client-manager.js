@@ -175,6 +175,26 @@ ClientManager.prototype.addSessionToChannel = function (sid, channel, autoCreate
     }
     return true;
 };
+/**
+ * Add user ID to channel
+ */
+ClientManager.prototype.addUserToChannel = function (uid, channel, autoCreate) {
+    if(typeof this.users[uid] === "undefined" || !Object.keys(this.users[uid].sessions).length || !Object.keys(this.users[uid].sockets).length) {
+        this.logger.log(this.logPrefix + 'addUserToChannel: User "'+uid+'" not exists');
+        return false;
+    }
+    if(!this.channelExists(channel)) {
+        if(typeof autoCreate === "undefined" || !autoCreate) {
+            this.logger.log(this.logPrefix + 'addUserToChannel: Channel "'+channel+'" not exists');
+            return false;
+        }
+        this.addChannel(channel);
+    }
+    for (var sessionId in this.users[uid].sessions) {
+        this.addSessionToChannel(sessionId, channel);
+    }
+    return true;
+};
 
 /**
  * Add session ID to channels (multiple channels)
@@ -204,6 +224,43 @@ ClientManager.prototype.removeSocketFromChannel = function (socketId, channel, s
     if(typeof skipChannelDelete === "undefined" || !skipChannelDelete) {
         //remove channel if empty
         if(!Object.keys(this.channels[channel].socketIds).length) this.removeChannel(channel);
+    }
+    return true;
+};
+
+/**
+ * Remove session ID from channel
+ */
+ClientManager.prototype.removeSessionFromChannel = function (sid, channel) {
+    if(!this.channelExists(channel)) {
+        this.logger.log(this.logPrefix + 'removeSessionFromChannel: Channel "'+channel+'" not exists');
+        return false;
+    }
+    if(typeof this.sessions[sid] === "undefined" || !Object.keys(this.sessions[sid].sockets).length) {
+        this.logger.log(this.logPrefix + 'removeSessionFromChannel: Session "'+sid+'" not exists');
+        return false;
+    }
+    if(typeof this.sessionChannels[sid][channel] !== "undefined") delete this.sessionChannels[sid][channel];
+    for (var socketId in this.sessions[sid].sockets) {
+        this.removeSocketFromChannel(socketId, channel);
+    }
+    return true;
+};
+
+/**
+ * Remove user ID from channel
+ */
+ClientManager.prototype.removeUserFromChannel = function (uid, channel) {
+    if(typeof this.users[uid] === "undefined" || !Object.keys(this.users[uid].sessions).length || !Object.keys(this.users[uid].sockets).length) {
+        this.logger.log(this.logPrefix + 'removeUserFromChannel: User "'+uid+'" not exists');
+        return false;
+    }
+    if(!this.channelExists(channel)) {
+        this.logger.log(this.logPrefix + 'removeUserFromChannel: Session "'+sid+'" not exists');
+        return false;
+    }
+    for (var sessionId in this.users[uid].sessions) {
+        this.removeSessionFromChannel(sessionId, channel);
     }
     return true;
 };
@@ -285,7 +342,7 @@ ClientManager.prototype.publishMessageToSid = function (uid, message) {
 };
 
 /**
- * Publish message to session id
+ * Publish message to channel
  */
 ClientManager.prototype.publishMessageToChannel = function (channel, message) {
     if(!this.channelExists(channel)) {

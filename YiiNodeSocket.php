@@ -70,61 +70,7 @@ class YiiNodeSocket extends Component {
     public function removeUserSessionChannel($channel) {
         if(isset($_SESSION['nodejs']['channels'][$channel])) {
             unset($_SESSION['nodejs']['channels'][$channel]);
-        }
-    }
-
-    public function addUserChannel($channel, $sid = null, $reset = false) {
-        if(!isset($sid)) $sid = session_id();
-        $thisSid = session_id();
-        $handler = Yii::$app->session;
-        if(empty($channel)) return;
-        //backup original session data
-        if($sid !== $thisSid) {
-            $session = $handler->readSession($sid);
-            $__sess = $_SESSION; session_decode($session);
-        }
-        $_SESSION['nodejs'] = isset($_SESSION['nodejs']) ? $_SESSION['nodejs'] : [];
-        $_SESSION['nodejs']['channels'] = isset($_SESSION['nodejs']['channels']) ? $_SESSION['nodejs']['channels'] : [];
-        if(is_array($channel)) {
-            foreach ($channel as $_channel) { $_SESSION['nodejs']['channels'][] = $_channel; }
-        } else {
-            $_SESSION['nodejs']['channels'][] = $channel;
-        }
-        //restore original session data
-        if($sid !== $thisSid) {
-            $session = session_encode();
-            $_SESSION = isset($__sess) ? $__sess : $_SESSION;
-            $handler->writeSession($sid, $session);
-        }
-        if($reset) {
-
-        }
-    }
-
-    public function removeUserChannel($channel, $sid = null) {
-        if(!isset($sid)) $sid = session_id();
-        $thisSid = session_id();
-        $handler = Yii::$app->session;
-        if(empty($channel)) return;
-        //backup original session data
-        if($sid !== $thisSid) {
-            $session = $handler->readSession($sid);
-            $__sess = $_SESSION; session_decode($session);
-        }
-        $_SESSION['nodejs'] = isset($_SESSION['nodejs']) ? $_SESSION['nodejs'] : [];
-        $_SESSION['nodejs']['channels'] = isset($_SESSION['nodejs']['channels']) ? $_SESSION['nodejs']['channels'] : [];
-        if(is_array($channel)) {
-            foreach ($channel as $_channel) {
-                if(isset($_SESSION['nodejs']['channels'][$_channel])) unset($_SESSION['nodejs']['channels'][$_channel]);
-            }
-        } else {
-            if(isset($_SESSION['nodejs']['channels'][$channel])) unset($_SESSION['nodejs']['channels'][$channel]);
-        }
-        //restore original session data
-        if($sid !== $thisSid) {
-            $session = session_encode();
-            $_SESSION = isset($__sess) ? $__sess : $_SESSION;
-            $handler->writeSession($sid, $session);
+            $this->removeSessionFromChannel(session_id(), $channel);
         }
     }
 
@@ -210,6 +156,66 @@ class YiiNodeSocket extends Component {
     public function sendMessage($message) {
         $url = $this->getNodeBaseUrl() . $this->nodeJsServerBase . '/publish_message';
         return $this->sendDataToNodeJS($message, $url);
+    }
+
+    /**
+     * Add session to channel
+     * @param string $sid
+     * @param string $channel
+     * @return mixed
+     */
+    public function addSessionToChannel($sid, $channel) {
+        $url = $this->getNodeBaseUrl() . $this->nodeJsServerBase . '/add_session_to_channel';
+        $data = [
+            'sid' => $sid,
+            'channel' => $channel,
+        ];
+        return $this->sendDataToNodeJS($data, $url);
+    }
+
+    /**
+     * Remove session from channel
+     * @param string $sid
+     * @param string $channel
+     * @return mixed
+     */
+    public function removeSessionFromChannel($sid, $channel) {
+        $url = $this->getNodeBaseUrl() . $this->nodeJsServerBase . '/remove_session_from_channel';
+        $data = [
+            'sid' => $sid,
+            'channel' => $channel,
+        ];
+        return $this->sendDataToNodeJS($data, $url);
+    }
+
+    /**
+     * Add user to channel
+     * @param integer $uid
+     * @param string $channel
+     * @return mixed
+     */
+    public function addUserToChannel($uid, $channel) {
+        $url = $this->getNodeBaseUrl() . $this->nodeJsServerBase . '/add_user_to_channel';
+        $data = [
+            'uid' => $uid,
+            'channel' => $channel,
+        ];
+        return $this->sendDataToNodeJS($data, $url);
+    }
+
+    /**
+     * Remove user from channel
+     * @param integer $uid
+     * @param string $channel
+     * @return mixed
+     */
+    public function removeUserFromChannel($uid, $channel) {
+        $url = $this->getNodeBaseUrl() . $this->nodeJsServerBase . '/remove_user_from_channel';
+        $data = [
+            'uid' => $uid,
+            'channel' => $channel,
+        ];
+        return $this->sendDataToNodeJS($data, $url);
     }
 
     /**

@@ -50,9 +50,24 @@ Routes.prototype.publishMessage = function (request, response) {
     response.json(resp);
 };
 
-Routes.prototype.addChannelToUser = function (request, response) {
+Routes.prototype.addUserToChannel = function (request, response) {
+    var result = request.clientManager.addUserToChannel(request.body.uid, request.body.channel, true);
+    response.json({success: result});
+};
 
-    response.json({success: true});
+Routes.prototype.addSessionToChannel = function (request, response) {
+    var result = request.clientManager.addSessionToChannel(request.body.sid, request.body.channel, true);
+    response.json({success: result});
+};
+
+Routes.prototype.removeUserFromChannel = function (request, response) {
+    var result = request.clientManager.removeUserFromChannel(request.body.uid, request.body.channel);
+    response.json({success: result});
+};
+
+Routes.prototype.removeSessionFromChannel = function (request, response) {
+    var result = request.clientManager.removeSessionFromChannel(request.body.sid, request.body.channel);
+    response.json({success: result});
 };
 
 Routes.prototype.updateUserData = function (request, response) {

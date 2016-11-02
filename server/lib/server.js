@@ -32,8 +32,11 @@ server.start = function (conf) {
     app.all('/server*', routes.checkServiceKey);
 
     app.post('/server/publish_message', routes.publishMessage);
-    app.post('/server/add_channel_to_user', routes.addChannelToUser);
-    app.post('/server/reload_user_channels', routes.updateUserData);
+    app.post('/server/add_user_to_channel', routes.addUserToChannel);
+    app.post('/server/add_session_to_channel', routes.addSessionToChannel);
+    app.post('/server/remove_user_from_channel', routes.removeUserFromChannel);
+    app.post('/server/remove_session_from_channel', routes.removeSessionFromChannel);
+    //app.post('/server/reload_user_channels', routes.updateUserData);
 
     app.all('*', routes.send404);
 
