@@ -86,7 +86,9 @@ In that case it runs in production mode with disabled debug information.
 #### Messages
 There are 3 message classes (I call it Frames):
 1. Basic (**YiiNodeSocketFrameBasic**) used for basic messages.
+
 2. jQuery (**YiiNodeSocketFrameJQuery**) used for jQuery DOM manipulations.
+
 3. Notify (**YiiNodeSocketFrameGrowl**) uses `kartik-v/yii2-widget-growl` to show messages for user.
 
 #### Examples
