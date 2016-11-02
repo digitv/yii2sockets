@@ -57,12 +57,16 @@ And add component do those configs (_https not implemented yet_):
     ...
 ]
 ```
+Parameter `channelsByPermissions` is an array with channel names and permissions.
+If `Yii::$app->user->can('permission')` returns `TRUE` than channel `channel_name` will be added to user automatically.
+It runs on session init.
+
 When configs are ready use console command to build Node.js config files:
 ```
 ./yii node-sockets/init
 ```
 
-Node.js server
+**Node.js server**
 
 Server is in `server` subdirectory. Before first run you must install all Node.js modules. Go to `server` directory and install they with command
 ```
@@ -78,3 +82,35 @@ For example:
 NODE_ENV=production node app.js
 ```
 In that case it runs in production mode with disabled debug information.
+
+#### Messages
+There are 3 message classes (I call it Frames):
+1. Basic (**YiiNodeSocketFrameBasic**) used for basic messages.
+2. jQuery (**YiiNodeSocketFrameJQuery**) used for jQuery DOM manipulations.
+3. Notify (**YiiNodeSocketFrameGrowl**) uses `kartik-v/yii2-widget-growl` to show messages for user.
+
+#### Examples
+Send message with array[] body to channel `test_channel`. On front end will be used Javascript callback `jsCallbackName`.
+```
+Yii::$app->nodeSockets->newMessage()
+    ->setBody([
+        'id' => $model->id,
+        'message' => Yii::t('app', 'You have new incoming call'),
+    ])
+    ->setChannel('test_channel')
+    ->setCallback('jsCallbackName')
+    ->send();
+```
+Send jQuery frame to user with ID `1`. It will remove element with selector `#element_selector`.
+```
+Yii::$app->nodeSockets->newJQuery()
+    ->remove('#element_selector')
+    ->setUser(1)
+    ->send();
+```
+Send message to this socket (example is used on AJAX request).
+```
+Yii::$app->nodeSockets->newNotify()
+    ->setText('Hello world')
+    ->sendToThis();
+```
