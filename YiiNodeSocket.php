@@ -30,11 +30,19 @@ class YiiNodeSocket extends Component {
     {
         parent::init();
         //Get current user socket id
-        $headers = Yii::$app->request->getHeaders();
+        $headers = Yii::$app->request->hasMethod('getHeaders') ? Yii::$app->request->getHeaders() : [];
         if(!empty($headers) && !empty($headers['yii-node-socket-id'])) {
             $userSocketId = is_array($headers['yii-node-socket-id']) ? reset($headers['yii-node-socket-id']) : $headers['yii-node-socket-id'];
             $this->userSocketId = !empty($userSocketId) ? $userSocketId : null;
         }
+    }
+
+    /**
+     * Check that user has connected socket (by request headers)
+     * @return bool
+     */
+    public function hasSocketConnected() {
+        return !empty($this->userSocketId);
     }
 
     /**
