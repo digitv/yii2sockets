@@ -153,6 +153,12 @@ class YiiNodeSocketFrameJQuery extends YiiNodeSocketFrameBasic  {
         return $this;
     }
 
+    public function css() {
+        $data = $this->composeMethodData('css', func_get_args());
+        $this->_body['methods'][] = $data;
+        return $this;
+    }
+
     /**
      * Method .trigger() for events
      * @return $this
@@ -170,7 +176,7 @@ class YiiNodeSocketFrameJQuery extends YiiNodeSocketFrameBasic  {
     public function func($functionName) {
         $data = $this->composeMethodData('_func', func_get_args());
         $this->_body['methods'][] = $data;
-        $this->selector('body');
+        if(empty($this->_body['selector'])) $this->selector('body');
         return $this;
     }
 
@@ -184,6 +190,7 @@ class YiiNodeSocketFrameJQuery extends YiiNodeSocketFrameBasic  {
     public function counters() {
         $data = $this->composeMethodData('_counters', func_get_args());
         $this->_body['methods'][] = $data;
+        if(empty($this->_body['selector'])) $this->selector('body');
         return $this;
     }
 

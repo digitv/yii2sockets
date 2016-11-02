@@ -42,12 +42,16 @@ YiiNodeSockets.callbacks.testCallback = function (message, _socket) {
 YiiNodeSockets.callbacks.jQueryFrameCallback = function (message, _socket) {
     if(typeof message.body.selector === "undefined") return;
     if(typeof message.body.methods === "undefined" || !message.body.methods.length) return;
-    var elements = jQuery(message.body.selector), methodRow, args;
+    var elements = jQuery(message.body.selector), methodRow, methodName = '', args;
+    var reloadMethods = ['replaceWithContext', 'replaceWith', 'remove'];
     for (var i in message.body.methods) {
+        //Reselect elements after some methods
+        if(reloadMethods.indexOf(methodName) !== -1) elements = jQuery(message.body.selector);
         methodRow = message.body.methods[i];
+        methodName = methodRow.method;
         args = typeof methodRow.arguments !== "undefined" ? methodRow.arguments : [];
         //Function invoke
-        if(methodRow.method == "_func") {
+        if(methodName == "_func") {
             var functionName = args.shift();
             if(functionName.indexOf('.') === -1 && typeof window[functionName] === "function") {
                 window[functionName].apply(window, args);
@@ -64,12 +68,12 @@ YiiNodeSockets.callbacks.jQueryFrameCallback = function (message, _socket) {
             }
         //jQuery method invoke
         } else {
-            if(typeof jQuery.fn[methodRow.method] !== "function") continue;
+            if(typeof jQuery.fn[methodName] !== "function") continue;
             //fix integer arguments
             for (var j in args) {
                 if(typeof args[j] === "string" && args[j] == parseInt(args[j])) args[j] = parseInt(args[j]);
             }
-            jQuery.fn[methodRow.method].apply(elements, args);
+            jQuery.fn[methodName].apply(elements, args);
         }
     }
 };
