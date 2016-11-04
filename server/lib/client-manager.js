@@ -305,7 +305,6 @@ ClientManager.prototype.removeSocketFromChannel = function (socketId, channel, s
         //remove channel if empty
         if(!Object.keys(this.channels[channel].socketIds).length) {
             this.expireChannel(channel);
-            //this.removeChannel(channel);
         }
     }
     return true;
