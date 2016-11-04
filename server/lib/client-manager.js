@@ -5,21 +5,101 @@ var cookie = require('cookie');
 var crypto = require('crypto');
 var Utility = require('./utility');
 var unSerialize=require("php-unserialize").unserializeSession;
+var test = 'test!';
 
 function ClientManager(settings) {
-    this.logPrefix = 'ClientManager->';     //prefix for log output
-    this.settings = settings;               //app settings
-    this.authenticatedClients = {};
-    this.sessionChannels = {};
-    this.channels = {};                     //channels list (active)
-    this.sockets = {};                      //sockets list by their id
-    this.sessions = {};                     //sockets list by session id
-    this.users = {};                        //sockets list by uid
+    this.logPrefix = 'ClientManager->';             //prefix for log output
+    this.settings = settings;                       //app settings
+    this.sessionChannels = {};                      //auto connect session channels
+    this.channels = {};                             //channels list (active)
+    this.sockets = {};                              //sockets list by their id
+    this.sessions = {};                             //sockets list by session id
+    this.users = {};                                //sockets list by uid
+    this.expired = {sessions: {}, channels: {}};    //expired data
     this.logger = new Utility.Logger(this.settings);
 }
 
+/**
+ * Get sockets count
+ */
 ClientManager.prototype.getSocketCount = function () {
     return Object.keys(this.sockets).length;
+};
+
+/**
+ * Mark channel as expired
+ */
+ClientManager.prototype.expireChannel = function (channel) {
+    return this.expire(channel, "channel");
+};
+
+/**
+ * Mark session as expired
+ */
+ClientManager.prototype.expireSession = function (sid) {
+    return this.expire(sid, "session");
+};
+
+/**
+ * Mark data as expired
+ */
+ClientManager.prototype.expire = function (id, type) {
+    var d = new Date(), time = d.getTime();
+    if(typeof type === "undefined") type = "session";
+    switch (type) {
+        case "session":
+            this.expired.sessions[id] = time + 10000;
+            break;
+        case "channel":
+            this.expired.channels[id] = time + 10000;
+            break;
+    }
+};
+
+/**
+ * Remove expire time mark
+ */
+ClientManager.prototype.expireRemove = function (id, type) {
+    switch (type) {
+        case "session":
+            if(typeof this.expired.sessions[id] === "undefined") return;
+            delete this.expired.sessions[id];
+            break;
+        case "channel":
+            if(typeof this.expired.channels[id] === "undefined") return;
+            delete this.expired.channels[id];
+            break;
+    }
+};
+
+/**
+ * CleanUp data
+ */
+ClientManager.prototype.cleanUp = function () {
+    var i, self = this, d = new Date(), time = d.getTime(), timeExpire;
+    //Sessions
+    for (i in self.expired.sessions) {
+        if(!self.expired.sessions.hasOwnProperty(i)) continue;
+        timeExpire = self.expired.sessions[i];
+        if(timeExpire <= time) {
+            if(typeof this.sessions[i] !== "undefined" && !Object.keys(this.sessions[i].sockets).length) {
+                delete this.sessions[i];
+                if(typeof this.sessionChannels[i] !== "undefined") { delete this.sessionChannels[i]; }
+            }
+            self.expireRemove(i, "session");
+        }
+    }
+    //Channels
+    for (i in self.expired.channels) {
+        if(!self.expired.channels.hasOwnProperty(i)) continue;
+        timeExpire = self.expired.channels[i];
+        if(timeExpire <= time) {
+            if(!Object.keys(this.channels[i].socketIds).length) {
+                this.removeChannel(i);
+            }
+            self.expireRemove(i, "channel");
+        }
+    }
 };
 
 /**
@@ -117,7 +197,7 @@ ClientManager.prototype.removeChannel = function (channel) {
                 this.removeSocketFromChannel(socketId, channel, true);
             }
         }
-        if(Object.keys(this.sessionChannels)) {
+        if(Object.keys(this.sessionChannels).length) {
             for (var sid in this.sessionChannels) {
                 if(typeof this.sessionChannels[sid][channel] !== "undefined") delete this.sessionChannels[sid][channel];
                 if(!Object.keys(this.sessionChannels[sid])) delete this.sessionChannels[sid];
@@ -223,7 +303,10 @@ ClientManager.prototype.removeSocketFromChannel = function (socketId, channel, s
     if(typeof this.channels[channel].socketIds[socketId] !== "undefined") delete this.channels[channel].socketIds[socketId];
     if(typeof skipChannelDelete === "undefined" || !skipChannelDelete) {
         //remove channel if empty
-        if(!Object.keys(this.channels[channel].socketIds).length) this.removeChannel(channel);
+        if(!Object.keys(this.channels[channel].socketIds).length) {
+            this.expireChannel(channel);
+            //this.removeChannel(channel);
+        }
     }
     return true;
 };
@@ -280,8 +363,8 @@ ClientManager.prototype.removeSocket = function (socket) {
     if(typeof this.sessions[sid] !== "undefined" && typeof this.sessions[sid].sockets[socket.id] !== "undefined") {
         delete this.sessions[sid].sockets[socket.id];
         if(Object.keys(this.sessions[sid].sockets).length == 0) {
-            //delete session from session list
-            delete this.sessions[sid];
+            //expire session in session list
+            this.expireSession(sid);
             //delete session from users sessions list
             if(typeof this.users[uid] !== "undefined" && typeof this.users[uid].sessions[sid] !== "undefined") {
                 delete this.users[uid].sessions[sid];
@@ -363,7 +446,7 @@ ClientManager.prototype.publishMessageToChannel = function (channel, message) {
  */
 ClientManager.prototype.publishMessageBroadcast = function (message) {
     var res;
-    var sentCount = Object.keys(this.sockets).length;
+    var sentCount = this.getSocketCount();
     for (var socketId in this.sockets) {
         res = this.publishMessageToClient(socketId, message);
     }

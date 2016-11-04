@@ -20,6 +20,7 @@ server.start = function (conf) {
     var routes = new Routes();
     var httpServer;
     var logger = new Utility.Logger(settings);
+
     app.use(cookieParser());
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({extended: true}));
@@ -50,6 +51,11 @@ server.start = function (conf) {
     }).on('error', function(exception) {
         logger.log('Socket error [' + exception + ']');
     });
+
+    //CleanUp interval
+    setInterval(function () {
+        clientManager.cleanUp();
+    }, 2000);
 
 };
 
