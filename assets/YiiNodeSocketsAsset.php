@@ -15,6 +15,7 @@ class YiiNodeSocketsAsset extends AssetBundle {
     public $depends = [
         'yii\web\JqueryAsset',
         'yii\bootstrap\BootstrapAsset',
+        'yii\bootstrap\BootstrapPluginAsset',
     ];
 
     public function init()
@@ -25,6 +26,7 @@ class YiiNodeSocketsAsset extends AssetBundle {
             "%s://%s:%d%s", $scheme, $host, Yii::$app->nodeSockets->nodeJsPort, '/socket.io/socket.io.js'
         );
         $this->js[] = 'node-client-config.js';
+        $this->js[] = 'js.cookie.js';
         $this->js[] = 'node-client.js';
     }
 }
