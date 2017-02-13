@@ -14,5 +14,6 @@
         "port": <?= $redis->port ?>
     },
     "serviceKey": "<?= $nodeSockets->serviceKey ?>",
+    "sslConf": <?= json_encode($nodeSockets->sslConf) ?>,
     "debug": true
 }

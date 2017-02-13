@@ -1,6 +1,18 @@
 /**
  *
  */
+
+String.prototype.hashCode = function() {
+    var hash = 0, i, chr, len;
+    if (this.length === 0) return hash;
+    for (i = 0, len = this.length; i < len; i++) {
+        chr   = this.charCodeAt(i);
+        hash  = ((hash << 5) - hash) + chr;
+        hash |= 0; // Convert to 32bit integer
+    }
+    return hash;
+};
+
 if(typeof io !== "undefined") {
     var socket = io(ioConf.scheme+'://'+ioConf.host+':'+ioConf.port);
 
@@ -28,6 +40,76 @@ if(typeof io !== "undefined") {
         console.log('channelConnect: ' + channelName);
     });
 }
+
+var WindowActivity = {
+    windowId: false,
+    cookieOptions: {},
+    setActiveBrowser: function (value) {
+        Cookies.set('_back_active_window', '' + value, WindowActivity.cookieOptions);
+    },
+    setActiveWindow: function (clear) {
+        if(typeof clear === "undefined") clear = false;
+        if(clear) {
+            Cookies.remove('_back_active_window_id', WindowActivity.cookieOptions);
+        } else {
+            var value = WindowActivity.getWindowId();
+            //var options = !clear ? { expires: 365, path: '/' } : { path: '/' };
+            Cookies.set('_back_active_window_id', value, WindowActivity.cookieOptions);
+        }
+    },
+    isActiveBrowser: function () {
+        var cookieVal = Cookies.get('_back_active_window');
+        cookieVal = !isNaN(parseInt(cookieVal)) ? parseInt(cookieVal) : 0;
+        return !!cookieVal;
+    },
+    isActiveWindow: function () {
+        var cookieVal = Cookies.get('_back_active_window_id');
+        if(typeof cookieVal === "undefined" || !cookieVal) WindowActivity.setActiveWindow();
+        return cookieVal == WindowActivity.getWindowId() || !cookieVal;
+    },
+    getWindowId: function () {
+        if(!WindowActivity.windowId) {
+            var d = new Date();
+            WindowActivity.windowId = '' + d.getTime() + window.location.href.hashCode();
+        }
+        return WindowActivity.windowId;
+    },
+    setNotificationEnabled: function (value) {
+        var cookieVal = value ? '1' : '0';
+        Cookies.set('_back_notifications_enabled', '' + cookieVal, WindowActivity.cookieOptions);
+    },
+    getNotificationEnabled: function () {
+        var cookieVal = Cookies.get('_back_notifications_enabled');
+        return !cookieVal;
+    }
+};
+
+//Window blur/focus
+$(window).on("blur focus unload load", function(e) {
+    var prevType = $(this).data("prevType");
+    //reduce double fire issues
+    if (prevType != e.type) {
+        switch (e.type) {
+            case "blur":
+                WindowActivity.setActiveBrowser(0);
+                break;
+            case "focus":
+                WindowActivity.setActiveWindow();
+                WindowActivity.setActiveBrowser(1);
+                break;
+            case "unload":
+                //clear active window ID
+                if(WindowActivity.isActiveWindow()) {
+                    WindowActivity.setActiveWindow(true);
+                }
+                break;
+            case "load":
+                WindowActivity.isActiveWindow();
+                break;
+        }
+    }
+    $(this).data("prevType", e.type);
+});
 
 //Init base object
 var YiiNodeSockets = {callbacks: {}};
@@ -83,4 +165,11 @@ YiiNodeSockets.callbacks.notifyFrameCallback = function (message, _socket) {
     if(typeof jQuery.notify !== "function") return;
     var body = message.body;
     jQuery.notify(body.options, body.settings);
+};
+
+//Alert/Sound notify frames callback
+YiiNodeSockets.callbacks.alertFrameCallback = function (message, _socket) {
+    var body = message.body, audioElem = $('#' + body.audioId);
+    if(!audioElem.length || (body.onlyActiveWindow && !WindowActivity.isActiveWindow())) return;
+    audioElem[0].play();
 };

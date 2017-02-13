@@ -62,6 +62,11 @@ var conf = convict({
         default: false,
         env: "DEBUG",
         arg: "debug"
+    },
+    sslConf: {
+        doc: "SSL config object",
+        format: Object,
+        default: {}
     }
 });
 

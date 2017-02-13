@@ -22,6 +22,8 @@ class YiiNodeSocket extends Component {
     public $nodeJsScheme = 'http';
     public $nodeJsServerBase = '/server';
 
+    public $sslConf = [];
+
     public $channelsByPermissions = [];
 
     public $userSocketId;
@@ -258,5 +260,12 @@ class YiiNodeSocket extends Component {
      */
     public function newNotify() {
         return new YiiNodeSocketFrameGrowl();
+    }
+
+    /**
+     * @return YiiNodeSocketFrameAlert
+     */
+    public function newAlert() {
+        return new YiiNodeSocketFrameAlert();
     }
 }

@@ -4,7 +4,7 @@
 'use strict';
 
 var express = require('express');
-var http = require('http');
+var fs = require('fs');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var ClientManager = require('./client-manager');
@@ -41,7 +41,24 @@ server.start = function (conf) {
 
     app.all('*', routes.send404);
 
-    httpServer = http.createServer(app);
+    //HTTPS/SSL server
+    if(typeof settings.sslConf.key !== "undefined" && typeof settings.sslConf.cert !== "undefined") {
+        var sslConf = {
+            key: fs.readFileSync(settings.sslConf.key, 'utf-8'),
+            cert: fs.readFileSync(settings.sslConf.cert, 'utf-8')
+        };
+        var sslShParam = settings.sslConf.dhparam;
+        if(typeof sslShParam !== "undefined") {
+            sslConf.dhparam = fs.readFileSync(sslShParam, 'utf-8');
+        }
+        var https = require('https');
+        httpServer = https.createServer(sslConf, app);
+    //HTTP server
+    } else {
+        var http = require('http');
+        httpServer = http.createServer(app);
+    }
+
     httpServer.listen(settings.port);
 
     var io = require('socket.io')(httpServer);
