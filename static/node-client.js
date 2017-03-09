@@ -14,7 +14,7 @@ String.prototype.hashCode = function() {
 };
 
 if(typeof io !== "undefined") {
-    var socket = io(ioConf.scheme+'://'+ioConf.host+':'+ioConf.port);
+    var socket = io(ioConf.scheme+'://'+ioConf.host+':'+ioConf.port, {query: {userPage: window.location.pathname}});
 
     socket.on('connect', function () {
         console.log('connected to socket.io');
@@ -172,4 +172,19 @@ YiiNodeSockets.callbacks.alertFrameCallback = function (message, _socket) {
     var body = message.body, audioElem = $('#' + body.audioId);
     if(!audioElem.length || (body.onlyActiveWindow && !WindowActivity.isActiveWindow())) return;
     audioElem[0].play();
+};
+
+//Chat frames callback
+YiiNodeSockets.callbacks.chatFrameCallback = function (message, _socket) {
+    var body = message.body;
+    if(typeof body.frameType === "undefined") return;
+    switch (body.frameType) {
+        case 'room':
+        case 'pm':
+            chat.addMessage(body.chatId, body.message);
+            break;
+        case 'close_chat':
+            chat.closeChat(body.chatId);
+            break;
+    }
 };
