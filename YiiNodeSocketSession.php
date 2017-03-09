@@ -5,10 +5,7 @@ use Yii;
 use yii\redis\Session;
 
 /**
- * Created by PhpStorm.
- * User: coder1
- * Date: 25.10.16
- * Time: 16:55
+ * Session Component
  */
 class YiiNodeSocketSession extends Session {
     /**
@@ -19,20 +16,6 @@ class YiiNodeSocketSession extends Session {
     protected function calculateKey($id)
     {
         return $this->keyPrefix . md5($id);
-    }
-
-    public function open()
-    {
-        parent::open();
-        $components = Yii::$app->components;
-        if(isset($components['nodeSockets']) && Yii::$app->nodeSockets && !empty(Yii::$app->nodeSockets->channelsByPermissions)) {
-            /* @var $nodeSockets YiiNodeSocket */
-            $nodeSockets = Yii::$app->nodeSockets;
-            foreach (Yii::$app->nodeSockets->channelsByPermissions as $channel => $permission) {
-                $can = $permission == '*' || (!Yii::$app->user->isGuest && Yii::$app->user->can($permission));
-                if($can) $nodeSockets->addUserSessionChannel($channel);
-            }
-        }
     }
 
     /**

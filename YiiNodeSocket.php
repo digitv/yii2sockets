@@ -37,6 +37,9 @@ class YiiNodeSocket extends Component {
             $userSocketId = is_array($headers['yii-node-socket-id']) ? reset($headers['yii-node-socket-id']) : $headers['yii-node-socket-id'];
             $this->userSocketId = !empty($userSocketId) ? $userSocketId : null;
         }
+        //Init user (if there was no calls to it before)
+        Yii::$app->user->getIsGuest();
+        $this->processChannelsInConfig();
     }
 
     /**
@@ -74,6 +77,22 @@ class YiiNodeSocket extends Component {
             unset($_SESSION['nodejs']['channels'][$channel]);
             $this->removeSessionFromChannel(session_id(), $channel);
         }
+    }
+
+    /**
+     * Set auto connect channels on session start
+     * @param $channels
+     */
+    public function setUserSessionChannels($channels) {
+        $_SESSION['nodejs']['channels'] = $channels;
+    }
+
+    /**
+     * Get auto connect channels from session
+     * @return array
+     */
+    public function getUserSessionChannels() {
+        return isset($_SESSION['nodejs']['channels']) ? $_SESSION['nodejs']['channels'] : [];
     }
 
     public function reloadUserChannels($sid = null) {
@@ -221,6 +240,20 @@ class YiiNodeSocket extends Component {
     }
 
     /**
+     * Get channel user list
+     * @param string $channel
+     * @return mixed
+     */
+    public function getChannelUsers($channel) {
+        $url = $this->getNodeBaseUrl() . $this->nodeJsServerBase . '/get_channel_users';
+        $data = [
+            'channel' => $channel,
+        ];
+        $result = $this->sendDataToNodeJS($data, $url);
+        return !empty($result['users']) ? (array)$result['users'] : [];
+    }
+
+    /**
      * Send any data to Node.js server
      * @param mixed $data
      * @param string $url
@@ -240,6 +273,35 @@ class YiiNodeSocket extends Component {
         $nodeOutJSON = @json_decode($nodeOut, true);
         curl_close ($curl);
         return $nodeOutJSON ? $nodeOutJSON : $nodeOut;
+    }
+
+    /**
+     * Process channels connect, defined in config
+     */
+    private function processChannelsInConfig() {
+        $sessionChannels = $this->getUserSessionChannels();
+        foreach ($this->channelsByPermissions as $channel => $_data) {
+            $permData = is_scalar($_data) ? [
+                'url' => '*',
+                'permission' => $_data,
+            ] : $_data;
+            $permData = $permData + ['url' => '*'];
+            $sessionChannels[$channel] = $permData;
+        }
+        if(empty($sessionChannels)) return;
+        foreach ($sessionChannels as $channel => $data) {
+            $can = false;
+            if ($data['permission'] == '@') $can = !Yii::$app->user->isGuest;
+            elseif ($data['permission'] == '?') $can = Yii::$app->user->isGuest;
+            else $can = $data['permission'] == '*' || (!Yii::$app->user->isGuest && Yii::$app->user->can($data['permission']));
+            if (!$can) {
+                unset($sessionChannels[$channel]);
+                $this->removeUserSessionChannel($channel);
+            } else {
+                $sessionChannels[$channel] = $data['url'];
+            }
+        }
+        $this->setUserSessionChannels($sessionChannels);
     }
 
     /**
@@ -268,5 +330,12 @@ class YiiNodeSocket extends Component {
      */
     public function newAlert() {
         return new YiiNodeSocketFrameAlert();
+    }
+
+    /**
+     * @return YiiNodeSocketFrameChat
+     */
+    public function newChat() {
+        return new YiiNodeSocketFrameChat();
     }
 }
