@@ -11,7 +11,7 @@ use yii\web\IdentityInterface;
  * @var string $_sessionId
  * @var string $_channel
  * @var string $_callback
- * @var integer $_userId
+ * @var integer|array $_userId
  * @var boolean $_broadcast
  */
 class YiiNodeSocketFrameBasic extends Component {
