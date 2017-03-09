@@ -273,7 +273,7 @@ ClientManager.prototype.addSessionToChannel = function (sid, channel, autoCreate
     this.sessionChannels[sid][channel] = channel;
     for (var socketId in this.sessions[sid].sockets) {
         if(typeof this.channels[channel].socketIds[socketId] !== "undefined") continue;
-        this.addSocketToChannel(socketId, channel, urlCheck);
+        this.addSocketToChannel(socketId, channel, false, urlCheck);
     }
     return true;
 };
