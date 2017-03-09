@@ -30,7 +30,16 @@ Routes.prototype.publishMessage = function (request, response) {
         resp.error = 'Undefined recipient (sessionId|socketId|userId|channel|broadcast)';
     //Send to User ID
     } else if(userId !== false) {
-        sentCount = request.clientManager.publishMessageToUser(userId, body);
+        //Users ID array
+        if(typeof userId !== "object") {
+            sentCount = 0;
+            for (var i in userId) {
+                sentCount += request.clientManager.publishMessageToUser(userId[i], body);
+            }
+        //Single user ID
+        } else {
+            sentCount = request.clientManager.publishMessageToUser(userId, body);
+        }
     //Send to Session ID
     } else if(sessionId !== false) {
         sentCount = request.clientManager.publishMessageToSid(sessionId, body);
@@ -68,6 +77,11 @@ Routes.prototype.removeUserFromChannel = function (request, response) {
 Routes.prototype.removeSessionFromChannel = function (request, response) {
     var result = request.clientManager.removeSessionFromChannel(request.body.sid, request.body.channel);
     response.json({success: result});
+};
+
+Routes.prototype.getChannelUsers = function (request, response) {
+    var result = request.clientManager.getChannelUsersCached(request.body.channel);
+    response.json({success: true, users: result});
 };
 
 Routes.prototype.updateUserData = function (request, response) {

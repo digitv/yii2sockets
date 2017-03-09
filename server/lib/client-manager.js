@@ -5,7 +5,6 @@ var cookie = require('cookie');
 var crypto = require('crypto');
 var Utility = require('./utility');
 var unSerialize=require("php-unserialize").unserializeSession;
-var test = 'test!';
 
 function ClientManager(settings) {
     this.logPrefix = 'ClientManager->';             //prefix for log output
@@ -15,6 +14,7 @@ function ClientManager(settings) {
     this.sockets = {};                              //sockets list by their id
     this.sessions = {};                             //sockets list by session id
     this.users = {};                                //sockets list by uid
+    this.channelUsers = {};                         //Channel users connected
     this.expired = {sessions: {}, channels: {}};    //expired data
     this.logger = new Utility.Logger(this.settings);
 }
@@ -109,6 +109,8 @@ ClientManager.prototype.addSocket = function (socket) {
     var self = this;
     var redisClient = redis.createClient(this.settings.redis.port, this.settings.redis.hostname);
 
+    socket.handshake.query.userPage = typeof socket.handshake.query.userPage !== "undefined" ? socket.handshake.query.userPage : '/';
+
     self.logger.debug(self.logPrefix + 'addSocket: Client '+socket.id+' connected');
 
     redisClient.on('connect', function() {
@@ -160,7 +162,7 @@ ClientManager.prototype.updateClientSocketData = function (socket, redisClient) 
                 self.sessions[socket.sid].sockets[socket.id] = socket.id;
                 self.sessions[socket.sid].data = data;
                 if(typeof data.session.nodejs !== "undefined" && typeof data.session.nodejs.channels !== "undefined") {
-                    self.addSessionToChannelMultiple(socket, data.session.nodejs.channels);
+                    self.addSessionToChannelMultipleInternal(socket, data.session.nodejs.channels);
                 }
             } else {
                 //Disconnect if no session
@@ -184,6 +186,9 @@ ClientManager.prototype.addChannel = function (channel) {
     if(!this.channels.hasOwnProperty(channel)) {
         this.channels[channel] = {socketIds: {}};
     }
+    if(!this.channelUsers.hasOwnProperty(channel)) {
+        this.channelUsers[channel] = {};
+    }
     return true;
 };
 
@@ -203,6 +208,9 @@ ClientManager.prototype.removeChannel = function (channel) {
                 if(!Object.keys(this.sessionChannels[sid])) delete this.sessionChannels[sid];
             }
         }
+        if(typeof this.channelUsers[channel] !== "undefined") {
+            delete this.channelUsers[channel];
+        }
         delete this.channels[channel];
     }
 };
@@ -217,7 +225,7 @@ ClientManager.prototype.channelExists = function (channel) {
 /**
  * Add socket to active channel
  */
-ClientManager.prototype.addSocketToChannel = function (socketId, channel, autoCreate) {
+ClientManager.prototype.addSocketToChannel = function (socketId, channel, autoCreate, urlCheck) {
     if(!this.channelExists(channel)) {
         if(typeof autoCreate === "undefined" || !autoCreate) {
             this.logger.log(this.logPrefix + 'addSocketToChannel: Channel "'+channel+'" not exists');
@@ -225,8 +233,21 @@ ClientManager.prototype.addSocketToChannel = function (socketId, channel, autoCr
         }
         this.addChannel(channel);
     }
+    urlCheck = typeof urlCheck !== "undefined" ? urlCheck : '*';
     this.channels[channel].socketIds = typeof this.channels[channel].socketIds !== "undefined" ? this.channels[channel].socketIds : {};
+    if(urlCheck != "*") {
+        var urlChecked = false;
+        if(typeof urlCheck === "object") {
+            for (var i in urlCheck) {
+                if(urlCheck[i] == this.sockets[socketId].handshake.query.userPage) { urlChecked = true; break; }
+            }
+        } else if(urlCheck == this.sockets[socketId].handshake.query.userPage) {
+            urlChecked = true;
+        }
+        if(!urlChecked) return false;
+    }
     this.channels[channel].socketIds[socketId] = socketId;
+    if(typeof this.channelUsers[channel][this.sockets[socketId].uid] === "undefined") this.channelUsers[channel][this.sockets[socketId].uid] = this.sockets[socketId].uid;
     this.sockets[socketId].emit('channelConnect', channel);
     this.logger.debug(this.logPrefix + 'addSocketToChannel: Socket "'+socketId+'" added to channel "'+channel+'"');
     return true;
@@ -235,7 +256,7 @@ ClientManager.prototype.addSocketToChannel = function (socketId, channel, autoCr
 /**
  * Add session ID to channel
  */
-ClientManager.prototype.addSessionToChannel = function (sid, channel, autoCreate) {
+ClientManager.prototype.addSessionToChannel = function (sid, channel, autoCreate, urlCheck) {
     if(!this.channelExists(channel)) {
         if(typeof autoCreate === "undefined" || !autoCreate) {
             this.logger.log(this.logPrefix + 'addSessionToChannel: Channel "'+channel+'" not exists');
@@ -243,6 +264,7 @@ ClientManager.prototype.addSessionToChannel = function (sid, channel, autoCreate
         }
         this.addChannel(channel);
     }
+    urlCheck = typeof urlCheck !== "undefined" ? urlCheck : '*';
     if(typeof this.sessions[sid] === "undefined" || !Object.keys(this.sessions[sid].sockets).length) {
         this.logger.log(this.logPrefix + 'addSessionToChannel: Session "'+sid+'" not exists');
         return false;
@@ -251,7 +273,7 @@ ClientManager.prototype.addSessionToChannel = function (sid, channel, autoCreate
     this.sessionChannels[sid][channel] = channel;
     for (var socketId in this.sessions[sid].sockets) {
         if(typeof this.channels[channel].socketIds[socketId] !== "undefined") continue;
-        this.addSocketToChannel(socketId, channel);
+        this.addSocketToChannel(socketId, channel, urlCheck);
     }
     return true;
 };
@@ -276,6 +298,19 @@ ClientManager.prototype.addUserToChannel = function (uid, channel, autoCreate) {
     return true;
 };
 
+ClientManager.prototype.addSessionToChannelMultipleInternal = function (socket, sessionChannels) {
+    var sid = socket.sid, channel;
+    this.sessionChannels[sid] = typeof this.sessionChannels[sid] !== "undefined" ? this.sessionChannels[sid] : {};
+    for (var i in sessionChannels){
+        channel = i;
+        if(typeof this.sessionChannels[sid][channel] === "undefined") {
+            this.addSessionToChannel(socket.sid, channel, true, sessionChannels[i]);
+        } else {
+            this.addSocketToChannel(socket.id, channel, true, sessionChannels[i]);
+        }
+    }
+};
+
 /**
  * Add session ID to channels (multiple channels)
  */
@@ -293,6 +328,33 @@ ClientManager.prototype.addSessionToChannelMultiple = function (socket, channels
 };
 
 /**
+ * Get channel user list
+ */
+ClientManager.prototype.getChannelUsers = function (channel) {
+    if(!this.channelExists(channel)) {
+        this.logger.log(this.logPrefix + 'getChannelUsers: Channel "'+channel+'" not exists');
+        return false;
+    }
+    var userIds = {}, userId;
+    for (var socketId in this.channels[channel].socketIds) {
+        userId = this.sockets[socketId].uid;
+        if(userId && typeof userIds[userId] === "undefined") userIds[userId] = userId;
+    }
+    return userIds;
+};
+
+/**
+ * Get channel user list (cached)
+ */
+ClientManager.prototype.getChannelUsersCached = function (channel) {
+    if(!this.channelExists(channel)) {
+        this.logger.log(this.logPrefix + 'getChannelUsers: Channel "'+channel+'" not exists');
+        return false;
+    }
+    return typeof this.channelUsers[channel] !== "undefined" ? this.channelUsers[channel] : {};
+};
+
+/**
  * Remove socket from channel
  */
 ClientManager.prototype.removeSocketFromChannel = function (socketId, channel, skipChannelDelete) {
@@ -300,12 +362,18 @@ ClientManager.prototype.removeSocketFromChannel = function (socketId, channel, s
         this.logger.log(this.logPrefix + 'removeSocketFromChannel: Channel "'+channel+'" not exists');
         return false;
     }
-    if(typeof this.channels[channel].socketIds[socketId] !== "undefined") delete this.channels[channel].socketIds[socketId];
+    if(typeof this.channels[channel].socketIds[socketId] !== "undefined") {
+        delete this.channels[channel].socketIds[socketId];
+    }
     if(typeof skipChannelDelete === "undefined" || !skipChannelDelete) {
         //remove channel if empty
         if(!Object.keys(this.channels[channel].socketIds).length) {
             this.expireChannel(channel);
         }
+    }
+    var userId = this.sockets[socketId].uid;
+    if(typeof this.users[userId] === "undefined" && typeof this.channelUsers[channel] !== "undefined" && typeof this.channelUsers[channel][userId] !== "undefined") {
+        delete this.channelUsers[channel][userId];
     }
     return true;
 };
