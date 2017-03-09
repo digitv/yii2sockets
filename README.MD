@@ -52,6 +52,10 @@ And add component do those configs (_https not implemented yet_):
             'sessionKeyPrefix' => 'sess_preffix_',
             'channelsByPermissions' => [
                 'channel_name' => 'permission',
+                'channel_name_2' => [
+                    'permission' => '@',
+                    'url' => '/chat/index',     //URL on which users can connect to channel
+                ],
             ],
         ],
     ...
@@ -59,7 +63,7 @@ And add component do those configs (_https not implemented yet_):
 ```
 Parameter `channelsByPermissions` is an array with channel names and permissions.
 If `Yii::$app->user->can('permission')` returns `TRUE` than channel `channel_name` will be added to user automatically.
-It runs on session init.
+It runs on component init.
 
 When configs are ready use console command to build Node.js config files:
 ```
