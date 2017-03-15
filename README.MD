@@ -2,7 +2,7 @@ Node.js server integration module (web-sockets)
 
 **Install with composer**
 ```
-composer require digitv/yii2sockets:1.x-dev
+composer require digitv/yii2sockets:1.*
 ```
 Add console command controller to the config (_controllerMap section_):
 ```
