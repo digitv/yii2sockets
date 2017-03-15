@@ -96,6 +96,8 @@ There are 3 message classes (I call it Frames):
 
 3. Notify (**YiiNodeSocketFrameGrowl**) uses `kartik-v/yii2-widget-growl` to show messages for user.
 
+4. Alert (**YiiNodeSocketFrameAlert**) plays audio alert to user.
+
 #### Examples
 Send message with array[] body to channel `test_channel`. On front end will be used Javascript callback `jsCallbackName`.
 ```
@@ -121,6 +123,32 @@ Yii::$app->nodeSockets->newJQuery()
     ->setUser(1)
     ->send();
 ```
+Send Alert frame to channel `test_channel` to all browser windows (not active too):
+```
+Yii::$app->nodeSockets->newAlert()
+    ->setAudioId('audio_element_id')
+    ->setChannel('test_channel')
+    ->onlyActiveWindow(false)
+    ->send();
+```
+Please notice, that you need to render block with `<audio>` element in order to play it.
+
+Also includes example **YiiNodeSocketFrameChat** frame type that sends message depending on its content:
+1. to `recipient_id` and `author_id` if object contains both those properties;
+2. to `channel` composed automatically otherwise. You can see frame source for details.
+
+```
+$message = new ChatMessage([
+    'recipient_id' => 4,
+    'author_id' => 1,
+    'message' => 'test text message',
+]);
+
+Yii::$app->nodeSockets->newChat()
+    ->setMessage($message)
+    ->send();
+```
+
 Javascript callback example:
 ```
 YiiNodeSockets.callbacks.jsCallbackName = function (message, _socket) {
