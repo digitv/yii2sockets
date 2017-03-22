@@ -38,8 +38,11 @@ class YiiNodeSocket extends Component {
             $this->userSocketId = !empty($userSocketId) ? $userSocketId : null;
         }
         //Init user (if there was no calls to it before)
-        Yii::$app->user->getIsGuest();
-        $this->processChannelsInConfig();
+        $components = Yii::$app->components;
+        if(isset($components['user'])) {
+            Yii::$app->user->getIsGuest();
+            $this->processChannelsInConfig();
+        }
     }
 
     /**
