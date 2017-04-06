@@ -18,6 +18,7 @@ class YiiNodeSocketFrameChat extends YiiNodeSocketFrameBasic
     const TYPE_ROOM_MESSAGE = 'room';
     const TYPE_CHAT_CLOSE = 'close_chat';
     const TYPE_MESSAGE_DELETE = 'delete_message';
+    const TYPE_MESSAGE_DELETE_BULK = 'delete_messages_bulk';
 
     protected $_callback = 'chatFrameCallback';
     protected $_frameType;
@@ -69,6 +70,28 @@ class YiiNodeSocketFrameChat extends YiiNodeSocketFrameBasic
         }
         $this->_message = $message->composeJsonData();
         $this->_chatId = $message->getChatId();
+        return $this;
+    }
+
+    /**
+     * Delete messages bulk from chat
+     * @param array $messageIds
+     * @param string $chatId
+     * @param string|null $channel
+     * @param array|null $uIds
+     * @return YiiNodeSocketFrameChat
+     */
+    public function deleteMessagesBulk($messageIds, $chatId, $channel = null, $uIds = null) {
+        $this->_frameType = self::TYPE_MESSAGE_DELETE_BULK;
+        $ids = [];
+        foreach ($messageIds as $message) {
+            if(is_scalar($message)) $ids[] = $message;
+            else $ids[] = $message->id;
+        }
+        if(isset($channel)) $this->_channel = $channel;
+        if(isset($uIds)) $this->_userId = $uIds;
+        $this->_chatId = $chatId;
+        $this->_message = ['ids' => $ids];
         return $this;
     }
 

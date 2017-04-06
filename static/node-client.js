@@ -189,5 +189,13 @@ YiiNodeSockets.callbacks.chatFrameCallback = function (message, _socket) {
         case 'delete_message':
             chat.deleteMessage(body.chatId, body.message);
             break;
+        case 'delete_messages_bulk':
+            if(typeof body.message.ids !== "undefined" && body.message.ids.length) {
+                for(var i = 0; i < body.message.ids.length; i++) {
+                    if(typeof body.message.ids[i] === "undefined") continue;
+                    chat.deleteMessage(body.chatId, body.message.ids[i]);
+                }
+            }
+            break;
     }
 };
