@@ -2,16 +2,16 @@
  *
  */
 
-String.prototype.hashCode = function() {
+function getStringHashCode(string) {
     var hash = 0, i, chr, len;
-    if (this.length === 0) return hash;
-    for (i = 0, len = this.length; i < len; i++) {
-        chr   = this.charCodeAt(i);
+    if (typeof string === "undefined" || string.length === 0) return hash;
+    for (i = 0, len = string.length; i < len; i++) {
+        chr   = string.charCodeAt(i);
         hash  = ((hash << 5) - hash) + chr;
         hash |= 0; // Convert to 32bit integer
     }
     return hash;
-};
+}
 
 if(typeof io !== "undefined") {
     var socket = io(ioConf.scheme+'://'+ioConf.host+':'+ioConf.port, {query: {userPage: window.location.pathname}});
@@ -70,7 +70,7 @@ var WindowActivity = {
     getWindowId: function () {
         if(!WindowActivity.windowId) {
             var d = new Date();
-            WindowActivity.windowId = '' + d.getTime() + window.location.href.hashCode();
+            WindowActivity.windowId = '' + d.getTime() + getStringHashCode(window.location.href);
         }
         return WindowActivity.windowId;
     },
