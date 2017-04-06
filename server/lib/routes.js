@@ -21,9 +21,11 @@ Routes.prototype.publishMessage = function (request, response) {
     var body = {body: request.body.body},
         channel = typeof request.body.channel !== "undefined" ? request.body.channel : false,
         userId = typeof request.body.userId !== "undefined" ? request.body.userId : false,
+        userIdAvoid = typeof request.body.avoidUserId !== "undefined" ? parseInt(request.body.avoidUserId) : false,
         sessionId = typeof request.body.sessionId !== "undefined" ? request.body.sessionId : false,
         socketId = typeof request.body.socketId !== "undefined" ? request.body.socketId : false,
         broadcast = typeof request.body.broadcast !== "undefined" ? request.body.broadcast : false;
+    userIdAvoid = !isNaN(userIdAvoid) ? userIdAvoid : false;
     if(typeof request.body.callback !== "undefined") body.callback = request.body.callback;
     var sentCount = 0, resp = {success: false, sent: 0};
     if(userId === false && sessionId === false && socketId === false && channel === false && broadcast === false) {
@@ -48,10 +50,10 @@ Routes.prototype.publishMessage = function (request, response) {
         sentCount = request.clientManager.publishMessageToClient(socketId, body) ? 1 : 0;
     //Send to channel
     } else if(channel !== false) {
-        sentCount = request.clientManager.publishMessageToChannel(channel, body);
+        sentCount = request.clientManager.publishMessageToChannel(channel, body, userIdAvoid);
     //Send to all users
     } else if(broadcast !== false && broadcast) {
-        sentCount = request.clientManager.publishMessageBroadcast(body);
+        sentCount = request.clientManager.publishMessageBroadcast(body, userIdAvoid);
     }
     resp.success = typeof resp.error === "undefined";
     resp.sent = sentCount;

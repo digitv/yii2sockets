@@ -494,13 +494,17 @@ ClientManager.prototype.publishMessageToSid = function (uid, message) {
 /**
  * Publish message to channel
  */
-ClientManager.prototype.publishMessageToChannel = function (channel, message) {
+ClientManager.prototype.publishMessageToChannel = function (channel, message, userIdAvoid) {
     if(!this.channelExists(channel)) {
         this.logger.debug(this.logPrefix + 'publishMessageToChannel: Channel "'+channel+'" not exists');
         return 0;
     }
-    var sentCount = 0, res;
+    var sentCount = 0, res, userId;
     for (var socketId in this.channels[channel].socketIds) {
+        if(!this.channels[channel].socketIds.hasOwnProperty(socketId)) continue;
+        userId = (typeof this.sockets[socketId] !== "undefined" && typeof this.sockets[socketId].uid !== "undefined")
+            ? parseInt(this.sockets[socketId].uid) : null;
+        if(userIdAvoid && userIdAvoid === userId) continue;
         res = this.publishMessageToClient(socketId, message);
         sentCount = res ? sentCount +1 : sentCount;
     }
@@ -511,10 +515,13 @@ ClientManager.prototype.publishMessageToChannel = function (channel, message) {
 /**
  * Publish broadcast message
  */
-ClientManager.prototype.publishMessageBroadcast = function (message) {
-    var res;
-    var sentCount = this.getSocketCount();
+ClientManager.prototype.publishMessageBroadcast = function (message, userIdAvoid) {
+    var res, sentCount = this.getSocketCount(), userId;
     for (var socketId in this.sockets) {
+        if(!this.sockets.hasOwnProperty(socketId)) continue;
+        userId = (typeof this.sockets[socketId] !== "undefined" && typeof this.sockets[socketId].uid !== "undefined")
+            ? parseInt(this.sockets[socketId].uid) : null;
+        if(userIdAvoid && userIdAvoid === userId) continue;
         res = this.publishMessageToClient(socketId, message);
     }
     this.logger.debug(this.logPrefix + 'publishMessageBroadcast: sent to '+sentCount+' recipients');

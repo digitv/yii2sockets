@@ -18,6 +18,7 @@ class YiiNodeSocketFrameBasic extends Component {
     protected $_channel;
     protected $_sessionId;
     protected $_userId;
+    protected $_avoidUserId;
     protected $_socketId;
     protected $_broadcast = false;
     protected $_body;
@@ -54,6 +55,16 @@ class YiiNodeSocketFrameBasic extends Component {
      */
     public function setChannel($channel) {
         $this->_channel = $channel;
+        return $this;
+    }
+
+    /**
+     * Do not send channel message to user with specified ID
+     * @param integer $userId
+     * @return $this
+     */
+    public function avoidUser($userId) {
+        $this->_avoidUserId = $userId;
         return $this;
     }
 
@@ -208,6 +219,7 @@ class YiiNodeSocketFrameBasic extends Component {
         elseif(isset($this->_socketId)) { $data['socketId'] = $this->_socketId; }
         //check callback
         if(isset($this->_callback)) { $data['callback'] = $this->_callback; }
+        if(isset($this->_avoidUserId)) { $data['avoidUserId'] = $this->_avoidUserId; }
         //add body
         $data['body'] = $this->_body;
 
