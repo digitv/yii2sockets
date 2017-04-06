@@ -17,6 +17,7 @@ class YiiNodeSocketFrameChat extends YiiNodeSocketFrameBasic
     const TYPE_PRIVATE_MESSAGE = 'pm';
     const TYPE_ROOM_MESSAGE = 'room';
     const TYPE_CHAT_CLOSE = 'close_chat';
+    const TYPE_MESSAGE_DELETE = 'delete_message';
 
     protected $_callback = 'chatFrameCallback';
     protected $_frameType;
@@ -50,6 +51,24 @@ class YiiNodeSocketFrameChat extends YiiNodeSocketFrameBasic
         $this->_frameType = self::TYPE_CHAT_CLOSE;
         $this->_chatId = $chatId;
         $this->_userId = \Yii::$app->user->id;
+        return $this;
+    }
+
+    /**
+     * Delete message from chat
+     * @param ChatMessage $message
+     * @return YiiNodeSocketFrameChat
+     */
+    public function deleteMessage($message) {
+        $this->_frameType = self::TYPE_MESSAGE_DELETE;
+        if(isset($message->recipient_id)) {
+            $uIds = [$message->recipient_id, $message->author_id];
+            $this->_userId = $uIds;
+        } else {
+            $this->_channel = 'chat-' . $message->getChatId();
+        }
+        $this->_message = $message->composeJsonData();
+        $this->_chatId = $message->getChatId();
         return $this;
     }
 

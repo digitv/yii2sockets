@@ -186,5 +186,8 @@ YiiNodeSockets.callbacks.chatFrameCallback = function (message, _socket) {
         case 'close_chat':
             chat.closeChat(body.chatId);
             break;
+        case 'delete_message':
+            chat.deleteMessage(body.chatId, body.message);
+            break;
     }
 };
