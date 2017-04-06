@@ -7,6 +7,7 @@
 namespace digitv\yii2sockets;
 
 use backend\modules\chat\models\ChatMessage;
+use Yii;
 
 /**
  * @property boolean $_onlyActiveWindow
@@ -24,6 +25,7 @@ class YiiNodeSocketFrameChat extends YiiNodeSocketFrameBasic
     protected $_frameType;
     protected $_message;
     protected $_chatId;
+    protected $_noAlert = false;
 
     /**
      * @param ChatMessage $message
@@ -96,6 +98,16 @@ class YiiNodeSocketFrameChat extends YiiNodeSocketFrameBasic
     }
 
     /**
+     * Disable alert to recipients
+     * @param bool $value
+     * @return $this
+     */
+    public function noAlert($value = true) {
+        $this->_noAlert = !empty($value);
+        return $this;
+    }
+
+    /**
      * Validate frame
      * @return bool
      */
@@ -103,6 +115,26 @@ class YiiNodeSocketFrameChat extends YiiNodeSocketFrameBasic
     {
         $this->composeOptions();
         return parent::validate();
+    }
+
+    /**
+     * Sound alert
+     * @return bool|mixed
+     */
+    public function send()
+    {
+        $status = parent::send();
+        if(!empty($status) && !$this->_noAlert && in_array($this->_frameType, [self::TYPE_PRIVATE_MESSAGE, self::TYPE_ROOM_MESSAGE])) {
+            $alert = new YiiNodeSocketFrameAlert();
+            if($this->_frameType == self::TYPE_ROOM_MESSAGE) {
+                $alert->setChannel($this->_channel);
+                if(!Yii::$app->user->isGuest) $alert->avoidUser(Yii::$app->user->id);
+            } elseif($this->_frameType == self::TYPE_PRIVATE_MESSAGE) {
+                $alert->setUser($this->_message->recipient_id);
+            }
+            $alert->send();
+        }
+        return $status;
     }
 
     /**
