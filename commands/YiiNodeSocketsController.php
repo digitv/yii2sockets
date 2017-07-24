@@ -46,7 +46,7 @@ EOD;
      * @return int
      */
     protected function compileClient() {
-		printf("Compile client config\n");
+        $this->stdout("Compile client config\n");
         $nodeSockets = Yii::$app->nodeSockets;
         $redis = Yii::$app->redis;
 		ob_start();
@@ -56,7 +56,7 @@ EOD;
 	}
 
 	protected function compileServer() {
-		printf("Compile server configs\n");
+        $this->stdout("Compile server configs\n");
         $nodeSockets = Yii::$app->nodeSockets;
         $redis = Yii::$app->redis;
 		ob_start();
