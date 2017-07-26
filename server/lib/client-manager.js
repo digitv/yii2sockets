@@ -480,7 +480,7 @@ ClientManager.prototype.publishMessageToUser = function (uid, message) {
 /**
  * Publish message to session id
  */
-ClientManager.prototype.publishMessageToSid = function (uid, message) {
+ClientManager.prototype.publishMessageToSid = function (sid, message) {
     if(typeof this.sessions[sid] === "undefined" || typeof this.sessions[sid].sockets === "undefined") return 0;
     var res, sentCount = 0;
     for (var socketId in this.sessions[sid].sockets) {
