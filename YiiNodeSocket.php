@@ -1,12 +1,26 @@
 <?php
 namespace digitv\yii2sockets;
+
 use Yii;
 use yii\base\Component;
+use yii\helpers\Inflector;
 
 /**
+ * Class for node.js web-sockets integration
+ * @property string $sessionVarName
+ * @property string $sessionKeyPrefix
+ * @property string $serviceKey
+ * @property string $nodeJsHost
+ * @property string $nodeJsHostClient
+ * @property string $nodeJsPort
+ * @property string $nodeJsScheme
+ * @property string $nodeJsServerBase
+ * @property array  $sslConf
+ * @property array  $channelsByPermissions
+ * @property string $userSocketId
  *
+ * @property string $nodeBaseUrl
  */
-
 class YiiNodeSocket extends Component {
     /**
      * Cookie name
@@ -28,6 +42,9 @@ class YiiNodeSocket extends Component {
 
     public $userSocketId;
 
+    /**
+     * @inheritdoc
+     */
     public function init()
     {
         parent::init();
@@ -52,14 +69,6 @@ class YiiNodeSocket extends Component {
      */
     public function hasSocketConnected() {
         return !empty($this->userSocketId);
-    }
-
-    /**
-     * Get base url of Node.js server
-     * @return string
-     */
-    protected function getNodeBaseUrl() {
-        return $this->nodeJsScheme . '://' . $this->nodeJsHost . ':' . $this->nodeJsPort;
     }
 
     /**
@@ -99,12 +108,16 @@ class YiiNodeSocket extends Component {
         return isset($_SESSION['nodejs']['channels']) ? $_SESSION['nodejs']['channels'] : [];
     }
 
+    /**
+     * Reload user`s channels
+     * @param string $sid
+     */
     public function reloadUserChannels($sid = null) {
-        $url = $this->getNodeBaseUrl() . $this->nodeJsServerBase . '/reload_user_channels';
+        $method = Inflector::camel2id(__FUNCTION__, '_');
         $data = [
             'sid' => $sid,
         ];
-        $this->sendDataToNodeJS($data, $url);
+        $this->sendDataToNodeJS($data, $method);
     }
 
     /**
@@ -179,8 +192,7 @@ class YiiNodeSocket extends Component {
      * @return mixed
      */
     public function sendMessage($message) {
-        $url = $this->getNodeBaseUrl() . $this->nodeJsServerBase . '/publish_message';
-        return $this->sendDataToNodeJS($message, $url);
+        return $this->sendDataToNodeJS($message, 'publish_message');
     }
 
     /**
@@ -190,12 +202,12 @@ class YiiNodeSocket extends Component {
      * @return mixed
      */
     public function addSessionToChannel($sid, $channel) {
-        $url = $this->getNodeBaseUrl() . $this->nodeJsServerBase . '/add_session_to_channel';
+        $method = Inflector::camel2id(__FUNCTION__, '_');
         $data = [
             'sid' => $sid,
             'channel' => $channel,
         ];
-        return $this->sendDataToNodeJS($data, $url);
+        return $this->sendDataToNodeJS($data, $method);
     }
 
     /**
@@ -205,12 +217,12 @@ class YiiNodeSocket extends Component {
      * @return mixed
      */
     public function removeSessionFromChannel($sid, $channel) {
-        $url = $this->getNodeBaseUrl() . $this->nodeJsServerBase . '/remove_session_from_channel';
+        $method = Inflector::camel2id(__FUNCTION__, '_');
         $data = [
             'sid' => $sid,
             'channel' => $channel,
         ];
-        return $this->sendDataToNodeJS($data, $url);
+        return $this->sendDataToNodeJS($data, $method);
     }
 
     /**
@@ -220,12 +232,12 @@ class YiiNodeSocket extends Component {
      * @return mixed
      */
     public function addUserToChannel($uid, $channel) {
-        $url = $this->getNodeBaseUrl() . $this->nodeJsServerBase . '/add_user_to_channel';
+        $method = Inflector::camel2id(__FUNCTION__, '_');
         $data = [
             'uid' => $uid,
             'channel' => $channel,
         ];
-        return $this->sendDataToNodeJS($data, $url);
+        return $this->sendDataToNodeJS($data, $method);
     }
 
     /**
@@ -235,12 +247,12 @@ class YiiNodeSocket extends Component {
      * @return mixed
      */
     public function removeUserFromChannel($uid, $channel) {
-        $url = $this->getNodeBaseUrl() . $this->nodeJsServerBase . '/remove_user_from_channel';
+        $method = Inflector::camel2id(__FUNCTION__, '_');
         $data = [
             'uid' => $uid,
             'channel' => $channel,
         ];
-        return $this->sendDataToNodeJS($data, $url);
+        return $this->sendDataToNodeJS($data, $method);
     }
 
     /**
@@ -249,21 +261,25 @@ class YiiNodeSocket extends Component {
      * @return mixed
      */
     public function getChannelUsers($channel) {
-        $url = $this->getNodeBaseUrl() . $this->nodeJsServerBase . '/get_channel_users';
+        $method = Inflector::camel2id(__FUNCTION__, '_');
         $data = [
             'channel' => $channel,
         ];
-        $result = $this->sendDataToNodeJS($data, $url);
+        $result = $this->sendDataToNodeJS($data, $method);
         return !empty($result['users']) ? (array)$result['users'] : [];
     }
 
     /**
      * Send any data to Node.js server
      * @param mixed $data
-     * @param string $url
+     * @param string $url Method name or full URL
      * @return mixed
      */
     public function sendDataToNodeJS($data, $url) {
+        //Only method, not a full URL
+        if(strpos($url, $this->nodeBaseUrl) !== 0) {
+            $url = $this->getMethodFullUrl($url);
+        }
         $curl = curl_init($url);
         curl_setopt_array($curl, [
             CURLOPT_POST => 1,
@@ -282,7 +298,7 @@ class YiiNodeSocket extends Component {
     /**
      * Process channels connect, defined in config
      */
-    private function processChannelsInConfig() {
+    protected function processChannelsInConfig() {
         $sessionChannels = $this->getUserSessionChannels();
         foreach ($this->channelsByPermissions as $channel => $_data) {
             $permData = is_scalar($_data) ? [
@@ -294,7 +310,6 @@ class YiiNodeSocket extends Component {
         }
         if(empty($sessionChannels)) return;
         foreach ($sessionChannels as $channel => $data) {
-            $can = false;
             if ($data['permission'] == '@') $can = !Yii::$app->user->isGuest;
             elseif ($data['permission'] == '?') $can = Yii::$app->user->isGuest;
             else $can = $data['permission'] == '*' || (!Yii::$app->user->isGuest && Yii::$app->user->can($data['permission']));
@@ -306,6 +321,23 @@ class YiiNodeSocket extends Component {
             }
         }
         $this->setUserSessionChannels($sessionChannels);
+    }
+
+    /**
+     * Get full URL for server method
+     * @param string $method
+     * @return string
+     */
+    protected function getMethodFullUrl($method) {
+        return $this->nodeBaseUrl . $this->nodeJsServerBase . '/' . trim($method, '/');
+    }
+
+    /**
+     * Get base url of Node.js server
+     * @return string
+     */
+    protected function getNodeBaseUrl() {
+        return $this->nodeJsScheme . '://' . $this->nodeJsHost . ':' . $this->nodeJsPort;
     }
 
     /**
