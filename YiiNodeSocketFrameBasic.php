@@ -178,12 +178,17 @@ class YiiNodeSocketFrameBasic extends Component {
     /**
      * Send frame to current user socketId
      * useful on ajax requests
+     *
      * @return bool|mixed
      */
-    public function sendToThis() {
+    public function sendToThis()
+    {
         $socketId = Yii::$app->nodeSockets->userSocketId;
-        if(!$socketId) return false;
+        if (! $socketId) {
+            return false;
+        }
         $this->setSocketId($socketId);
+
         return $this->send();
     }
 
