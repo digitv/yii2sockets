@@ -1,6 +1,6 @@
 {
     "name": "digitv/yii2sockets",
-    "version": "1.0.6.3",
+    "version": "1.0.7",
     "description": "Node.js web-sockets support",
     "keywords": ["yii2", "node", "nodejs", "web-sockets"],
     "type": "yii2-extension",

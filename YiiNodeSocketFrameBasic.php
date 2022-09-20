@@ -1,4 +1,5 @@
 <?php
+
 namespace digitv\yii2sockets;
 
 use Yii;
@@ -165,13 +166,15 @@ class YiiNodeSocketFrameBasic extends Component {
      * Send frame
      * @return bool|mixed
      */
-    public function send() {
-        if($this->validate()) {
+    public function send()
+    {
+        if ($this->validate()) {
             /* @var $nodeSockets YiiNodeSocket */
             $data = $this->composeData();
-            $nodeSockets = Yii::$app->nodeSockets;
-            return $nodeSockets->sendMessage($data);
+
+            return Yii::$app->nodeSockets->sendMessage($data);
         }
+
         return false;
     }
 
@@ -212,19 +215,31 @@ class YiiNodeSocketFrameBasic extends Component {
 
     /**
      * Get data array for YiiNodeSocket
+     *
      * @return array
      */
-    protected function composeData() {
+    protected function composeData()
+    {
         $data = [];
         //grab addressee
-        if($this->isBroadcast()) { $data['broadcast'] = true; }
-        elseif(isset($this->_channel)) { $data['channel'] = $this->_channel; }
-        elseif(isset($this->_userId)) { $data['userId'] = $this->_userId; }
-        elseif(isset($this->_sessionId)) { $data['sessionId'] = $this->_sessionId; }
-        elseif(isset($this->_socketId)) { $data['socketId'] = $this->_socketId; }
+        if ($this->isBroadcast()) {
+            $data['broadcast'] = true;
+        } elseif (isset($this->_channel)) {
+            $data['channel'] = $this->_channel;
+        } elseif (isset($this->_userId)) {
+            $data['userId'] = $this->_userId;
+        } elseif (isset($this->_sessionId)) {
+            $data['sessionId'] = $this->_sessionId;
+        } elseif (isset($this->_socketId)) {
+            $data['socketId'] = $this->_socketId;
+        }
         //check callback
-        if(isset($this->_callback)) { $data['callback'] = $this->_callback; }
-        if(isset($this->_avoidUserId)) { $data['avoidUserId'] = $this->_avoidUserId; }
+        if (isset($this->_callback)) {
+            $data['callback'] = $this->_callback;
+        }
+        if (isset($this->_avoidUserId)) {
+            $data['avoidUserId'] = $this->_avoidUserId;
+        }
         //add body
         $data['body'] = $this->_body;
 

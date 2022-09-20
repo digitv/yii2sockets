@@ -337,9 +337,13 @@ class YiiNodeSocket extends Component {
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ['NodejsServiceKey: ' . $this->serviceKey],
             CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_SSL_VERIFYPEER => false,
         ]);
-        $nodeOut = curl_exec($curl);
-        //try to decode JSON data
+        if (($nodeOut = curl_exec($curl)) === false) {
+            $curlError = curl_error($curl) ?? 'Curl error';
+            Yii::error(sprintf("Node.js communication error:\n%s\nIn: %s:%d", $curlError, __METHOD__, __LINE__));
+        }
+        // Try to decode JSON data
         $nodeOutJSON = @json_decode($nodeOut, true);
         curl_close($curl);
 
